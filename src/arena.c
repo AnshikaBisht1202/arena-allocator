@@ -1,26 +1,8 @@
-#include <stdio.h>
-#include <stdint.h>
+#define _DEFAULT_SOURCE
+
+#include "arena.h"
+
 #include <string.h>
-#include <stdbool.h>
-
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef int8_t s8;
-typedef int16_t s16;
-typedef int32_t s32;
-typedef int64_t s64;
-
-typedef s8 b8;
-typedef s32 b32;
-
-#define KiB(n) ((u64)(n) << 10)
-#define MiB(n) ((u64)(n) << 20)
-#define GiB(n) ((u64)(n) << 30)
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #define ARENA_BASE_POS (sizeof(mem_arena))
 #define ARENA_ALIGN (sizeof(void*))
@@ -28,43 +10,11 @@ typedef s32 b32;
 // round n up to the next multiple of p, p must be a power of 2
 #define ALIGN_UP_POW2(n, p) (((u64)(n) + ((u64)(p) - 1)) & (~((u64)(p) - 1))) 
 
-typedef struct {
-    u64 reserve_size;
-    u64 commit_size;
-    u64 current_pos;
-    u64 commit_pos;
-} mem_arena;
-
-mem_arena* arena_create(u64 reserve_size, u64 commit_size); 
-void arena_destroy(mem_arena* arena);
-void* arena_push(mem_arena* arena, u64 size, b32 non_zero);
-void arena_pop(mem_arena* arena, u64 size);
-void arena_pop_to(mem_arena* arena, u64 tar_pos);
-void arena_reset(mem_arena* arena);
-
 u32 platform_mem_pagesize();
 void* platform_mem_reserve(u64 size);
 b32 platform_mem_commit(void* ptr, u64 size);
 b32 platform_mem_decommit(void* ptr, u64 size); 
 b32 platform_mem_release(void* ptr, u64 size); 
-
-int main(void) {
-    mem_arena* perm_arena = arena_create(GiB(1), MiB(1));
-
-    if (!perm_arena) {
-        fprintf(stderr, "Failed to create permanent arena\n");
-        return 1;
-    }
-    
-    while (1) {
-        arena_push(perm_arena, MiB(16), false);
-        getc(stdin);
-    }
-
-    arena_destroy(perm_arena);
-
-    return 0;
-}
 
 #if defined(__linux__)
 
